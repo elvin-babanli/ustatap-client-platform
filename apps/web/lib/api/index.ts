@@ -1,0 +1,15 @@
+export { apiClient, createApiClient } from "./client";
+export { parseApiError, getErrorMessage, type ApiErrorEnvelope } from "./errors";
+export * from "./auth";
+export * from "./categories";
+export * from "./services";
+export * from "./masters";
+export * from "./customer-profile";
+export * from "./master-profile";
+export * from "./bookings";
+export * from "./reviews";
+export * from "./notifications";
+export * from "./dashboard";
+export * from "./verification";
+export * from "./admin";
+export * from "./payments";
