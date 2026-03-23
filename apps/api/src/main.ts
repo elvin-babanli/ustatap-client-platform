@@ -7,6 +7,7 @@ import { GlobalHttpExceptionFilter } from "./common/filters";
 import { requestIdMiddleware } from "./common/middleware/request-id.middleware";
 import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
 import { validateConfig } from "./config/config.validation";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
   // Fail-fast config validation before app starts
@@ -47,6 +48,25 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Swagger
+  const config = new DocumentBuilder()
+    .setTitle("Ustatap API")
+    .setDescription("Ustatap client platform API")
+    .setVersion("0.1.0")
+    .addBearerAuth()
+    .addTag("auth", "Authentication endpoints")
+    .addTag("health", "Health and readiness")
+    .addTag("categories", "Service categories")
+    .addTag("services", "Services")
+    .addTag("masters", "Master profiles")
+    .addTag("bookings", "Bookings")
+    .addTag("payments", "Payments and payouts")
+    .addTag("reviews", "Reviews")
+    .addTag("admin", "Admin operations")
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api/docs", app, document);
 
   const port = configService.get<number>("port") ?? 3001;
   await app.listen(port);
