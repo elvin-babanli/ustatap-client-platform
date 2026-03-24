@@ -7,6 +7,8 @@ const EMPTY_ICONS: Record<string, string> = {
   notifications: "🔔",
   reviews: "⭐",
   masters: "👤",
+  messages: "💬",
+  disputes: "⚖️",
   default: "📭",
 };
 
@@ -27,16 +29,16 @@ export function EmptyState({
 }) {
   const iconChar = icon ? EMPTY_ICONS[icon] ?? EMPTY_ICONS.default : EMPTY_ICONS.default;
   return (
-    <div className={`text-center rounded-xl border border-gray-200 ${compact ? "py-8 px-4 bg-transparent border-0" : "py-16 px-6 bg-gray-50/80"}`}>
-      <span className="text-4xl block mb-3 opacity-60">{iconChar}</span>
-      <p className="text-gray-600 font-medium">{title}</p>
-      {description && <p className="text-gray-500 text-sm mt-1">{description}</p>}
+    <div className={`text-center rounded-xl border border-gray-200 ${compact ? "py-8 px-4 bg-transparent border-0" : "py-14 px-6 bg-gray-50/80"}`}>
+      <span className="text-4xl block mb-3 opacity-70">{iconChar}</span>
+      <p className="text-gray-900 font-semibold">{title}</p>
+      {description && <p className="text-gray-500 text-sm mt-2">{description}</p>}
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="inline-block mt-4 text-primary-600 hover:text-primary-700 font-medium"
+          className="inline-block mt-5 rounded-lg bg-primary-50 px-4 py-2 text-primary-700 hover:bg-primary-100 font-medium"
         >
-          {actionLabel} →
+          {actionLabel}
         </Link>
       )}
     </div>

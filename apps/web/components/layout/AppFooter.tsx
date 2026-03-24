@@ -10,7 +10,7 @@ export function AppFooter() {
   return (
     <footer className="border-t border-gray-200 bg-gray-50 mt-auto">
       <Container>
-        <div className="py-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div>
             <Link href="/" className="text-lg font-bold text-primary-600">
               UstaTap
@@ -19,23 +19,41 @@ export function AppFooter() {
               {t.footer?.tagline ?? "Trusted local professionals"}
             </p>
           </div>
-          <nav className="flex flex-wrap gap-6 text-sm">
+          <nav className="flex flex-col gap-3 text-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-400">Product</p>
+            <Link href="/how-it-works" className="text-gray-600 hover:text-gray-900">
+              {t.footer?.howItWorks ?? "How it works"}
+            </Link>
+            <Link href="/categories" className="text-gray-600 hover:text-gray-900">
+              {t.footer?.categories ?? "Categories"}
+            </Link>
+            <Link href="/safety" className="text-gray-600 hover:text-gray-900">
+              {t.footer?.safety ?? "Safety"}
+            </Link>
+          </nav>
+          <nav className="flex flex-col gap-3 text-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-400">Company</p>
             <Link href="/about" className="text-gray-600 hover:text-gray-900">
               {t.footer?.about ?? "About"}
             </Link>
             <Link href="/contact" className="text-gray-600 hover:text-gray-900">
               {t.footer?.contact ?? "Contact"}
             </Link>
+          </nav>
+          <nav className="flex flex-col gap-3 text-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-400">Legal</p>
             <Link href="/terms" className="text-gray-600 hover:text-gray-900">
               {t.footer?.terms ?? "Terms"}
             </Link>
             <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
-              {t.footer?.privacy ?? "Privacy"}
+              {t.footer?.privacy ?? "Privacy Policy"}
             </Link>
           </nav>
         </div>
-        <div className="py-4 border-t border-gray-200 text-center text-gray-500 text-sm">
-          © {new Date().getFullYear()} UstaTap. All rights reserved.
+        <div className="py-4 border-t border-gray-200">
+          <span className="text-gray-500 text-sm">
+            © {new Date().getFullYear()} UstaTap. All rights reserved.
+          </span>
         </div>
       </Container>
     </footer>

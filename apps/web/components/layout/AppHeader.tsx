@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth, logout } from "@/lib/auth";
@@ -9,109 +9,62 @@ import { locales, localeLabels, type Locale } from "@/lib/i18n";
 import { clsx } from "clsx";
 import { Container } from "./Container";
 import { Button } from "@/components/ui/Button";
+import {
+  bookingsHrefForRole,
+  favoritesHrefForRole,
+  listingsHrefForRole,
+  messagesHrefForRole,
+  settingsHrefForRole,
+} from "@/lib/navigation/account-hrefs";
 
 export function AppHeader() {
   const { user, accessToken, isReady } = useAuth();
   const { t, locale, setLocale } = useI18n();
   const router = useRouter();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   async function handleLogout() {
     await logout();
     router.push("/");
+    setMenuOpen(false);
   }
 
-  const dashboardHref =
-    user?.role === "ADMIN"
-      ? "/admin/dashboard"
-      : user?.role === "MASTER"
-        ? "/master/dashboard"
-        : "/customer/dashboard";
-
-  const navLinks = [
-    { href: "/", label: t.nav.home },
-    { href: "/categories", label: t.nav.categories },
-    { href: "/search", label: t.nav.search },
-    { href: "/categories?view=masters", label: t.nav.masters },
-  ];
+  const role = user?.role;
+  const authed = Boolean(isReady && accessToken && user);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
+    <header ref={menuRef} className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/90 backdrop-blur-md">
       <Container>
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between gap-6 h-14">
           <Link
             href="/"
-            className="text-xl font-bold text-primary-600 hover:text-primary-700 tracking-tight"
+            className="shrink-0 text-xl font-semibold text-primary-600 hover:text-primary-700 tracking-tight"
           >
             UstaTap
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex-1 hidden md:block" aria-hidden="true" />
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-0.5 border border-gray-200 rounded-lg p-0.5">
-              {locales.map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLocale(l as Locale)}
-                  className={clsx(
-                    "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
-                    locale === l ? "bg-primary-100 text-primary-700" : "text-gray-500 hover:text-gray-900"
-                  )}
-                >
-                  {localeLabels[l as Locale]}
-                </button>
-              ))}
-            </div>
-
-            {isReady && (
-              <>
-                {accessToken && user ? (
-                  <div className="hidden md:flex items-center gap-2">
-                    <Link href={dashboardHref}>
-                      <Button variant="ghost" size="sm">
-                        {t.nav.dashboard}
-                      </Button>
-                    </Link>
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                      {t.nav.logout}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="hidden md:flex items-center gap-2">
-                    <Link href="/login">
-                      <Button variant="ghost" size="sm">
-                        {t.nav.login}
-                      </Button>
-                    </Link>
-                    <Link href="/register">
-                      <Button variant="primary" size="sm">
-                        {t.nav.register}
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </>
-            )}
-
+          <div className="flex items-center">
             <button
               type="button"
-              aria-label="Toggle menu"
-              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={t.nav.menu}
+              aria-expanded={menuOpen}
+              className="p-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={() => setMenuOpen(!menuOpen)}
             >
-              {mobileOpen ? (
+              {menuOpen ? (
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -124,62 +77,86 @@ export function AppHeader() {
           </div>
         </div>
 
-        {mobileOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <nav className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-lg"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="flex gap-2 px-4 py-2 mt-2">
-                {locales.map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLocale(l as Locale)}
-                    className={clsx(
-                      "px-2.5 py-1 text-xs font-medium rounded-md",
-                      locale === l ? "bg-primary-100 text-primary-700" : "bg-gray-100 text-gray-600"
-                    )}
-                  >
-                    {localeLabels[l as Locale]}
-                  </button>
-                ))}
-              </div>
-              {isReady && accessToken && user && (
-                <div className="flex flex-col gap-2 px-4 pt-2">
+        {menuOpen && (
+          <div className="md:absolute md:right-4 md:top-full md:mt-2 md:w-64 md:rounded-xl md:border md:border-gray-200 md:bg-white md:shadow-lg py-2 border-t border-gray-100 md:border-t-0">
+            <nav className="flex flex-col gap-0.5 px-2">
+              {authed ? (
+                <>
                   <Link
-                    href={dashboardHref}
-                    className="py-2 text-gray-700 font-medium"
-                    onClick={() => setMobileOpen(false)}
+                    href={listingsHrefForRole(role)}
+                    className="px-4 py-2.5 text-gray-900 font-medium hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                    onClick={() => setMenuOpen(false)}
                   >
-                    {t.nav.dashboard}
+                    {t.nav.myListings}
+                  </Link>
+                  <Link
+                    href={bookingsHrefForRole(role)}
+                    className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t.nav.myBookings}
+                  </Link>
+                  <Link
+                    href={favoritesHrefForRole(role)}
+                    className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t.nav.favorites}
+                  </Link>
+                  <Link
+                    href={messagesHrefForRole(role)}
+                    className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t.messages.title}
+                  </Link>
+                  <Link
+                    href={settingsHrefForRole(role)}
+                    className="px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {role === "MASTER" ? t.masterDashboard.settings : t.customerDashboard.settings}
                   </Link>
                   <button
                     type="button"
-                    onClick={() => { handleLogout(); setMobileOpen(false); }}
-                    className="py-2 text-left text-gray-700 font-medium"
+                    onClick={handleLogout}
+                    className="px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 rounded-lg transition-colors text-sm"
                   >
                     {t.nav.logout}
                   </button>
+                </>
+              ) : (
+                <div className="flex flex-col gap-1 px-2 py-1">
+                  <Link href="/login" onClick={() => setMenuOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full justify-start font-medium">
+                      {t.nav.login}
+                    </Button>
+                  </Link>
+                  <Link href="/register" onClick={() => setMenuOpen(false)}>
+                    <Button variant="primary" size="sm" className="w-full">
+                      {t.nav.signUp}
+                    </Button>
+                  </Link>
                 </div>
               )}
-              {isReady && !accessToken && (
-                <div className="flex gap-2 px-4 pt-2">
-                  <Link href="/login" onClick={() => setMobileOpen(false)}>
-                    <Button variant="ghost" size="sm">{t.nav.login}</Button>
-                  </Link>
-                  <Link href="/register" onClick={() => setMobileOpen(false)}>
-                    <Button variant="primary" size="sm">{t.nav.register}</Button>
-                  </Link>
+              <div className="border-t border-gray-100 mt-2 pt-2 px-2">
+                <p className="px-2 text-[10px] uppercase tracking-wider text-gray-400 mb-1">{t.nav.languageMenu}</p>
+                <div className="flex flex-wrap gap-1">
+                  {locales.map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setLocale(l as Locale)}
+                      className={clsx(
+                        "px-2.5 py-1 text-xs font-medium rounded-md",
+                        locale === l ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
+                      )}
+                    >
+                      {localeLabels[l as Locale]}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
             </nav>
           </div>
         )}
