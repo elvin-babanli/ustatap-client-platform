@@ -1,3 +1,4 @@
+import "./bootstrap-env";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -10,7 +11,6 @@ import { validateConfig } from "./config/config.validation";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
-  // Fail-fast config validation before app starts
   validateConfig(process.env as unknown as Record<string, unknown>);
 
   const app = await NestFactory.create(AppModule);
@@ -18,21 +18,18 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  // Request ID - must be first to ensure it's set for all downstream handlers
   app.use(requestIdMiddleware);
 
-  // Security headers
   app.use(
     helmet({
       contentSecurityPolicy: process.env.NODE_ENV === "production",
-      crossOriginEmbedderPolicy: false, // Allow API to be embedded if needed
+      crossOriginEmbedderPolicy: false,
     }),
   );
 
-  // CORS - env-driven
   const corsOrigins = configService.get<string[]>("corsOrigins") ?? [];
   app.enableCors({
-    origin: corsOrigins.length > 0 ? corsOrigins : true, // true = reflect request origin in dev
+    origin: corsOrigins.length > 0 ? corsOrigins : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id", "Idempotency-Key"],
@@ -49,7 +46,6 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // Swagger
   const config = new DocumentBuilder()
     .setTitle("Ustatap API")
     .setDescription("Ustatap client platform API")

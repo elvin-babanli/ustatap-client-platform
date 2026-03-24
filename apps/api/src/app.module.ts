@@ -19,6 +19,8 @@ import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { AuditLogsModule } from "./modules/audit-logs/audit-logs.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
+import { DisputesModule } from "./modules/disputes";
+import { MessagesModule } from "./modules/messages";
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { PaymentsModule } from "./modules/payments/payments.module";
     AuditLogsModule,
     AdminModule,
     PaymentsModule,
+    DisputesModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [
