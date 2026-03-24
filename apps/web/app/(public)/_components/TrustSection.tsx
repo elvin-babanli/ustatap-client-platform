@@ -5,10 +5,9 @@ import { Container } from "@/components/layout/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const TRUST_ITEMS = [
-  { key: "trust1", icon: "✓" },
-  { key: "trust2", icon: "✓" },
-  { key: "trust3", icon: "✓" },
-  { key: "trust4", icon: "✓" },
+  { titleKey: "trust1", icon: "✅", description: "Background-checked and approved experts." },
+  { titleKey: "trust3", icon: "🔒", description: "Protected transactions via platform flow." },
+  { titleKey: "trust4", icon: "⭐", description: "Feedback from real completed bookings." },
 ] as const;
 
 export function TrustSection() {
@@ -18,16 +17,17 @@ export function TrustSection() {
     <section className="py-16 bg-white">
       <Container>
         <SectionHeading title={t.home.trustTitle} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TRUST_ITEMS.map((item) => (
             <div
-              key={item.key}
-              className="flex items-start gap-3 p-4 rounded-xl border border-gray-100"
+              key={item.titleKey}
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
             >
-              <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-50 text-lg">
                 {item.icon}
               </span>
-              <p className="font-medium text-gray-900">{t.home[item.key]}</p>
+              <p className="font-semibold text-gray-900">{t.home[item.titleKey]}</p>
+              <p className="mt-1 text-sm text-gray-500">{item.description}</p>
             </div>
           ))}
         </div>

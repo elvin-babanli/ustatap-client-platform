@@ -1,36 +1,34 @@
 import { getMasters } from "@/lib/api/masters";
 import { getCategories } from "@/lib/api/categories";
-import { HomeHero } from "./_components/HomeHero";
+import { HomeMapBrowse } from "./_components/HomeMapBrowse";
 import { HowItWorksSection } from "./_components/HowItWorksSection";
-import { HomeCategoriesSection } from "./_components/HomeCategoriesSection";
-import { FeaturedMastersSection } from "./_components/FeaturedMastersSection";
-import { MapPreviewSection } from "./_components/MapPreviewSection";
 import { TrustSection } from "./_components/TrustSection";
-import { HomeCTASection } from "./_components/HomeCTASection";
 
 export default async function HomePage() {
-  const [mastersRes, categories] = await Promise.all([
-    getMasters({ limit: 6, sortBy: "averageRating", sortOrder: "desc" }),
-    getCategories(),
-  ]);
+  let masters: Awaited<ReturnType<typeof getMasters>>["items"] = [];
+  let categories: Awaited<ReturnType<typeof getCategories>> = [];
 
-  const topMasters = mastersRes.items;
-  const homeCategories = categories.filter((c) =>
-    ["electrician", "plumber", "ac-repair", "cleaning"].includes(c.slug)
-  );
-  if (homeCategories.length === 0) {
-    homeCategories.push(...categories.slice(0, 4));
+  try {
+    const [mastersRes, categoriesData] = await Promise.all([
+      getMasters({ limit: 100, sortBy: "ratingDesc", sortOrder: "desc" }),
+      getCategories(),
+    ]);
+    masters = Array.isArray(mastersRes?.items) ? mastersRes.items : [];
+    categories = Array.isArray(categoriesData) ? categoriesData : [];
+  } catch {
+    // API unreachable — map/list render empty + local published listings on client
   }
+
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const catForFilter = safeCategories.filter(
+    (c) => c && typeof c === "object" && "slug" in c
+  ) as { slug: string; nameEn?: string; nameAz?: string; nameRu?: string }[];
 
   return (
     <>
-      <HomeHero />
-      <HowItWorksSection />
-      <HomeCategoriesSection categories={homeCategories} />
-      <FeaturedMastersSection masters={topMasters} />
-      <MapPreviewSection masters={topMasters} />
+      <HomeMapBrowse initialMasters={masters} categories={catForFilter} />
       <TrustSection />
-      <HomeCTASection />
+      <HowItWorksSection />
     </>
   );
 }

@@ -20,13 +20,14 @@ const MapComponent = dynamic(
   }
 );
 
-export function MapPreviewSection({ masters }: { masters: MasterSummary[] }) {
+export function MapPreviewSection({ masters = [] }: { masters?: MasterSummary[] }) {
   const { t } = useI18n();
-  const mastersWithCoords = masters.filter((m) => {
+  const safeMasters = Array.isArray(masters) ? masters : [];
+  const mastersWithCoords = safeMasters.filter((m) => {
     const area = m.serviceAreas?.[0] as { latitude?: unknown; longitude?: unknown } | undefined;
     return area?.latitude != null && area?.longitude != null;
   });
-  const displayMasters = mastersWithCoords.length > 0 ? mastersWithCoords : masters;
+  const displayMasters = mastersWithCoords.length > 0 ? mastersWithCoords : safeMasters;
 
   return (
     <section className="py-16 bg-gray-50">
