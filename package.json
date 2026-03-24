@@ -1,0 +1,19 @@
+{
+  "name": "ustatap-client-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "High-traffic, secure service marketplace web platform",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+    "prisma:seed": "pnpm --filter api prisma db seed",
+    "prisma:migrate:dev": "pnpm --filter api prisma migrate dev",
+    "prisma:studio": "pnpm --filter api prisma studio"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.14.2"
+}
