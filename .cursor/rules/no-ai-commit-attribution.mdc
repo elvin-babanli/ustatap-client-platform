@@ -1,0 +1,9 @@
+---
+description: Do not add AI or editor attribution to git commits
+alwaysApply: true
+---
+
+# Git commits
+
+- Never add lines such as `Made-with: Cursor`, `Co-authored-by:`, or similar tool/AI attribution to commit messages unless the user explicitly asks for them.
+- Keep commit subjects and bodies professional and human-written in tone.

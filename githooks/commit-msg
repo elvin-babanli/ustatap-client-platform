@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# Removes Cursor default footer from commit messages (runs after message is finalized).
+set -e
+msg_file="${1:?}"
+[ -f "$msg_file" ] || exit 0
+tmp="${msg_file}.tmp"
+if grep -q '^Made-with: Cursor$' "$msg_file" 2>/dev/null; then
+  grep -v '^Made-with: Cursor$' "$msg_file" > "$tmp" && mv "$tmp" "$msg_file"
+fi
+exit 0

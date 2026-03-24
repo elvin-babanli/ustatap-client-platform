@@ -115,3 +115,4 @@ ustatap-client-platform/
 - Atomic commits per logical change
 - Conventional commits: `feat()`, `fix()`, `docs()`, `chore()`
 - No "Made with Cursor" or similar in messages
+- After clone, enable the repo hook that strips that footer: `git config core.hooksPath githooks`
