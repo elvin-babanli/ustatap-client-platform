@@ -1,0 +1,2 @@
+// Planned: Categories module
+export {};
