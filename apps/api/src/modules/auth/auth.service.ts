@@ -8,11 +8,13 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { UserStatus } from "@prisma/client";
 import { createHash } from "crypto";
+import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../../prisma/prisma.service";
 import { UsersService } from "../users/users.service";
 import { createStructuredLogger } from "../../common/utils/logger.util";
 import { AUTH_ERRORS } from "./constants/auth.constants";
 import type { LoginDto, RefreshTokenDto, RegisterDto } from "./dto";
+import { RegisterRole } from "./dto/register.dto";
 import type { AuthResponse, SafeUser } from "./interfaces";
 import { toSafeUser } from "./utils/safe-user.util";
 
@@ -28,7 +30,14 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
-    const user = await this.users.createWithCustomerProfile(dto);
+    const role = dto.role ?? RegisterRole.CUSTOMER;
+    if (role !== RegisterRole.CUSTOMER && role !== RegisterRole.MASTER) {
+      throw new BadRequestException("Only CUSTOMER or MASTER role is allowed");
+    }
+    const user =
+      role === RegisterRole.MASTER
+        ? await this.users.createWithMasterProfile(dto)
+        : await this.users.createWithCustomerProfile(dto);
     return this.createAuthResponse(user.id);
   }
 
@@ -254,5 +263,109 @@ export class AuthService {
     return this.jwt.verifyAsync<{ sub: string }>(token, {
       secret: this.config.get<string>("jwt.refreshSecret"),
     });
+  }
+
+  // --- Forgot / Reset Password ---
+
+  async forgotPassword(identifier: string): Promise<{ message: string }> {
+    const user = await this.users.findByEmailOrPhone(
+      identifier.includes("@") ? identifier : undefined,
+      identifier.includes("@") ? undefined : identifier,
+    );
+    if (!user) {
+      return { message: "If an account exists, a reset code has been sent." };
+    }
+
+    const code = this.generateResetCode();
+    const codeHash = createHash("sha256").update(code).digest("hex");
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        codeHash,
+        expiresAt,
+      },
+    });
+
+    if (process.env.NODE_ENV !== "production") {
+      this.logger.info("Password reset code (dev only)", {
+        userId: user.id,
+        code,
+      });
+    }
+    return { message: "If an account exists, a reset code has been sent." };
+  }
+
+  async verifyResetCode(
+    identifier: string,
+    code: string,
+  ): Promise<{ valid: boolean }> {
+    const user = await this.users.findByEmailOrPhone(
+      identifier.includes("@") ? identifier : undefined,
+      identifier.includes("@") ? undefined : identifier,
+    );
+    if (!user) return { valid: false };
+
+    const codeHash = createHash("sha256").update(code).digest("hex");
+    const token = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        codeHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    return { valid: !!token };
+  }
+
+  async resetPassword(
+    identifier: string,
+    code: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.users.findByEmailOrPhone(
+      identifier.includes("@") ? identifier : undefined,
+      identifier.includes("@") ? undefined : identifier,
+    );
+    if (!user) {
+      throw new UnauthorizedException("Invalid or expired reset code");
+    }
+
+    const codeHash = createHash("sha256").update(code).digest("hex");
+    const token = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        codeHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    if (!token) {
+      throw new UnauthorizedException("Invalid or expired reset code");
+    }
+
+    const saltRounds = this.config.get<number>("bcrypt.saltRounds") ?? 12;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: token.id },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.session.updateMany({
+        where: { userId: user.id },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+  }
+
+  private generateResetCode(): string {
+    return String(Math.floor(100000 + Math.random() * 900000));
   }
 }

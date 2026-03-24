@@ -5,7 +5,14 @@ import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { CurrentUser } from "./decorators/current-user.decorator";
-import { LoginDto, RefreshTokenDto, RegisterDto } from "./dto";
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+  VerifyResetCodeDto,
+} from "./dto";
 
 /** Stricter rate limit for auth endpoints (brute-force mitigation) */
 const AUTH_THROTTLE = { default: { limit: 5, ttl: 60000 } }; // 5 req/min
@@ -55,6 +62,29 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() userId: string) {
     return this.auth.me(userId);
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post("forgot-password")
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.auth.forgotPassword(dto.identifier);
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post("verify-reset-code")
+  async verifyResetCode(@Body() dto: VerifyResetCodeDto) {
+    return this.auth.verifyResetCode(dto.identifier, dto.code);
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post("reset-password")
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.auth.resetPassword(
+      dto.identifier,
+      dto.code,
+      dto.newPassword,
+    );
+    return { message: "Password has been reset successfully" };
   }
 
   private getRequestContext(req: Request) {
