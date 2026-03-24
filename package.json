@@ -4,8 +4,9 @@
   "private": true,
   "description": "High-traffic, secure service marketplace web platform",
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:api": "pnpm --filter api start:dev",
+    "dev:api": "node scripts/dev-api.mjs",
+    "dev:web": "node scripts/dev-web.mjs",
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"node scripts/dev-api.mjs\" \"node scripts/dev-web.mjs\"",
     "build:web": "pnpm --filter web build",
     "build:api": "pnpm --filter api build",
     "prisma:seed": "pnpm --filter api prisma db seed",
@@ -15,5 +16,8 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.14.2"
+  "packageManager": "pnpm@9.14.2",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
