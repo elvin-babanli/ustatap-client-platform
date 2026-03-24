@@ -1,0 +1,2 @@
+// Planned: Bookings module
+export {};
