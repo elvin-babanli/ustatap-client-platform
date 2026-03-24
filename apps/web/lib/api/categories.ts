@@ -23,9 +23,18 @@ export interface Category {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const res = await fetch(getUrl(""));
-  if (!res.ok) throw new Error("Failed to fetch categories");
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(getUrl(""), {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error("Failed to fetch categories");
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category & { serviceCount?: number }> {

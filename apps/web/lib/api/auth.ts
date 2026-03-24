@@ -1,10 +1,11 @@
 /**
- * Auth API client - future-ready for token handling.
- * Uses standard error envelope for consistent error handling.
+ * Auth API client.
+ * Login/register use plain fetch. getMe uses authenticated fetch.
  */
 
 import { apiClient } from "./client";
 import { parseApiError, getErrorMessage } from "./errors";
+import { authenticatedJson } from "./request";
 
 const getAuthBaseUrl = () => `${apiClient.getBaseUrl()}/api/v1/auth`;
 
@@ -30,12 +31,19 @@ export interface LoginCredentials {
   password: string;
 }
 
+export type RegisterRole = "CUSTOMER" | "MASTER";
+
 export interface RegisterData {
+  role?: RegisterRole;
   email?: string;
   phone: string;
   password: string;
   firstName: string;
   lastName: string;
+  bio?: string;
+  experienceYears?: number;
+  categoryId?: string;
+  startingPrice?: number;
 }
 
 /**
@@ -102,15 +110,62 @@ export async function logout(refreshToken: string): Promise<void> {
 }
 
 /**
- * Get current user - requires Authorization header
+ * Get current user - uses token from auth store
  */
-export async function getMe(accessToken: string) {
-  const res = await fetch(`${getAuthBaseUrl()}/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+export async function getMe() {
+  return authenticatedJson<AuthResponse["user"]>(`${getAuthBaseUrl()}/me`);
+}
+
+/**
+ * Forgot password - sends reset code (dev: logs code)
+ */
+export async function forgotPassword(identifier: string): Promise<{ message: string }> {
+  const res = await fetch(`${getAuthBaseUrl()}/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier }),
   });
   if (!res.ok) {
     const envelope = await parseApiError(res);
     throw new Error(getErrorMessage(envelope));
   }
   return res.json();
+}
+
+/**
+ * Verify reset code before showing new password form
+ */
+export async function verifyResetCode(
+  identifier: string,
+  code: string,
+): Promise<{ valid: boolean }> {
+  const res = await fetch(`${getAuthBaseUrl()}/verify-reset-code`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, code }),
+  });
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
+  return res.json();
+}
+
+/**
+ * Reset password with code
+ */
+export async function resetPassword(
+  identifier: string,
+  code: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch(`${getAuthBaseUrl()}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, code, newPassword }),
+  });
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
 }

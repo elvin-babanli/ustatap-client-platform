@@ -1,17 +1,14 @@
 /**
- * Payments API client.
+ * Payments API client (uses auth from store).
  * Supports Idempotency-Key header for payment initiation.
  */
 
 import { apiClient } from "./client";
 import { parseApiError, getErrorMessage } from "./errors";
+import { authenticatedFetch } from "./request";
 
 const getUrl = (path: string) =>
   `${apiClient.getBaseUrl()}/api/v1/payments${path}`;
-
-function authHeaders(accessToken: string) {
-  return { Authorization: `Bearer ${accessToken}` };
-}
 
 export interface InitiateBookingPaymentData {
   method: "CARD" | "BANK_TRANSFER" | "CASH" | "WALLET" | "OTHER";
@@ -53,18 +50,14 @@ export interface CreatePayoutData {
 }
 
 export async function initiateBookingPayment(
-  accessToken: string,
   bookingId: string,
   data: InitiateBookingPaymentData,
   idempotencyKey?: string
 ) {
-  const headers: Record<string, string> = {
-    ...authHeaders(accessToken),
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
-  const res = await fetch(getUrl(`/bookings/${bookingId}/initiate`), {
+  const res = await authenticatedFetch(getUrl(`/bookings/${bookingId}/initiate`), {
     method: "POST",
     headers,
     body: JSON.stringify(data),
@@ -76,62 +69,54 @@ export async function initiateBookingPayment(
   return res.json();
 }
 
-export async function getMyPayments(
-  accessToken: string,
-  query?: PaymentsQuery
-) {
+export async function getMyPayments(query?: PaymentsQuery) {
   const params = new URLSearchParams();
   if (query?.page) params.set("page", String(query.page));
   if (query?.limit) params.set("limit", String(query.limit));
   if (query?.status) params.set("status", query.status);
   if (query?.bookingId) params.set("bookingId", query.bookingId);
   const qs = params.toString();
-  const res = await fetch(getUrl(`/me${qs ? `?${qs}` : ""}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Failed to fetch payments");
+  const res = await authenticatedFetch(getUrl(`/me${qs ? `?${qs}` : ""}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function getMyPaymentById(
-  accessToken: string,
-  id: string
-) {
-  const res = await fetch(getUrl(`/me/${id}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Payment not found");
+export async function getMyPaymentById(id: string) {
+  const res = await authenticatedFetch(getUrl(`/me/${id}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function getMyPayouts(
-  accessToken: string,
-  query?: PayoutsQuery
-) {
+export async function getMyPayouts(query?: PayoutsQuery) {
   const params = new URLSearchParams();
   if (query?.page) params.set("page", String(query.page));
   if (query?.limit) params.set("limit", String(query.limit));
   if (query?.status) params.set("status", query.status);
   const qs = params.toString();
-  const res = await fetch(getUrl(`/master/payouts/me${qs ? `?${qs}` : ""}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Failed to fetch payouts");
+  const res = await authenticatedFetch(getUrl(`/master/payouts/me${qs ? `?${qs}` : ""}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function getMyPayoutSummary(accessToken: string) {
-  const res = await fetch(getUrl("/master/payouts/me/summary"), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Failed to fetch payout summary");
+export async function getMyPayoutSummary() {
+  const res = await authenticatedFetch(getUrl("/master/payouts/me/summary"));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function getAdminPayments(
-  accessToken: string,
-  query?: AdminPaymentsQuery
-) {
+export async function getAdminPayments(query?: AdminPaymentsQuery) {
   const params = new URLSearchParams();
   if (query?.page) params.set("page", String(query.page));
   if (query?.limit) params.set("limit", String(query.limit));
@@ -142,36 +127,31 @@ export async function getAdminPayments(
   if (query?.dateFrom) params.set("dateFrom", query.dateFrom);
   if (query?.dateTo) params.set("dateTo", query.dateTo);
   const qs = params.toString();
-  const res = await fetch(getUrl(`/admin${qs ? `?${qs}` : ""}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Failed to fetch payments");
+  const res = await authenticatedFetch(getUrl(`/admin${qs ? `?${qs}` : ""}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function getAdminPaymentById(
-  accessToken: string,
-  id: string
-) {
-  const res = await fetch(getUrl(`/admin/${id}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Payment not found");
+export async function getAdminPaymentById(id: string) {
+  const res = await authenticatedFetch(getUrl(`/admin/${id}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
 export async function updateAdminPaymentStatus(
-  accessToken: string,
   id: string,
   status: string,
   failureReason?: string
 ) {
-  const res = await fetch(getUrl(`/admin/${id}/status`), {
+  const res = await authenticatedFetch(getUrl(`/admin/${id}/status`), {
     method: "PATCH",
-    headers: {
-      ...authHeaders(accessToken),
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status, failureReason }),
   });
   if (!res.ok) {
@@ -181,10 +161,7 @@ export async function updateAdminPaymentStatus(
   return res.json();
 }
 
-export async function getAdminPayouts(
-  accessToken: string,
-  query?: AdminPayoutsQuery
-) {
+export async function getAdminPayouts(query?: AdminPayoutsQuery) {
   const params = new URLSearchParams();
   if (query?.page) params.set("page", String(query.page));
   if (query?.limit) params.set("limit", String(query.limit));
@@ -193,23 +170,18 @@ export async function getAdminPayouts(
   if (query?.dateFrom) params.set("dateFrom", query.dateFrom);
   if (query?.dateTo) params.set("dateTo", query.dateTo);
   const qs = params.toString();
-  const res = await fetch(getUrl(`/admin/payouts${qs ? `?${qs}` : ""}`), {
-    headers: authHeaders(accessToken),
-  });
-  if (!res.ok) throw new Error("Failed to fetch payouts");
+  const res = await authenticatedFetch(getUrl(`/admin/payouts${qs ? `?${qs}` : ""}`));
+  if (!res.ok) {
+    const envelope = await parseApiError(res);
+    throw new Error(getErrorMessage(envelope));
+  }
   return res.json();
 }
 
-export async function createAdminPayout(
-  accessToken: string,
-  data: CreatePayoutData
-) {
-  const res = await fetch(getUrl("/admin/payouts"), {
+export async function createAdminPayout(data: CreatePayoutData) {
+  const res = await authenticatedFetch(getUrl("/admin/payouts"), {
     method: "POST",
-    headers: {
-      ...authHeaders(accessToken),
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -219,17 +191,10 @@ export async function createAdminPayout(
   return res.json();
 }
 
-export async function updateAdminPayoutStatus(
-  accessToken: string,
-  id: string,
-  status: string
-) {
-  const res = await fetch(getUrl(`/admin/payouts/${id}/status`), {
+export async function updateAdminPayoutStatus(id: string, status: string) {
+  const res = await authenticatedFetch(getUrl(`/admin/payouts/${id}/status`), {
     method: "PATCH",
-    headers: {
-      ...authHeaders(accessToken),
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
   if (!res.ok) {

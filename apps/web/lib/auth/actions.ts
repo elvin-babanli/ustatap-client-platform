@@ -12,11 +12,16 @@ export async function login(credentials: { email?: string; phone?: string; passw
 }
 
 export async function register(data: {
+  role?: "CUSTOMER" | "MASTER";
   email?: string;
   phone: string;
   password: string;
   firstName: string;
   lastName: string;
+  bio?: string;
+  experienceYears?: number;
+  categoryId?: string;
+  startingPrice?: number;
 }) {
   const res = await apiRegister(data);
   setAuth(res.user, res.accessToken, res.refreshToken);

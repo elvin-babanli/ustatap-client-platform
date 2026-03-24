@@ -4,12 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
+import { Container } from "@/components/layout/Container";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -37,50 +44,94 @@ export default function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit} style={{ maxWidth: "320px", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <div>
-          <label htmlFor="email">Email (optional)</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ display: "block", width: "100%", padding: "0.5rem" }}
-          />
-        </div>
-        <div>
-          <label htmlFor="phone">Phone (optional)</label>
-          <input
-            id="phone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+994..."
-            style={{ display: "block", width: "100%", padding: "0.5rem" }}
-          />
-        </div>
-        <p style={{ fontSize: "0.875rem", color: "#666" }}>Provide either email or phone</p>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ display: "block", width: "100%", padding: "0.5rem" }}
-          />
-        </div>
-        {error && <p style={{ color: "red", fontSize: "0.875rem" }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ padding: "0.5rem 1rem" }}>
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
-      <p style={{ marginTop: "1rem" }}>
-        No account? <Link href="/register">Register</Link>
-      </p>
-    </main>
+    <div className="min-h-[60vh] flex items-center py-12">
+      <Container size="narrow">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{t.nav.login}</h1>
+        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              {t.profile.email} or {t.profile.phone}
+            </label>
+            <Input
+              id="email"
+              type="text"
+              value={email || phone}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v.includes("@")) {
+                  setEmail(v);
+                  setPhone("");
+                } else {
+                  setPhone(v);
+                  setEmail("");
+                }
+              }}
+              placeholder="email@example.com or +994..."
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm text-gray-600">{t.auth.rememberMe}</span>
+            </label>
+            <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">
+              {t.auth.forgotPassword}
+            </Link>
+          </div>
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+            {loading ? "Signing in..." : t.nav.login}
+          </Button>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or continue with</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button type="button" variant="outline" disabled className="opacity-60">
+              {t.auth.continueWithGoogle} ({t.common.comingSoon})
+            </Button>
+            <Button type="button" variant="outline" disabled className="opacity-60">
+              {t.auth.continueWithFacebook} ({t.common.comingSoon})
+            </Button>
+          </div>
+        </form>
+        <p className="mt-6 text-gray-600 text-sm">
+          No account?{" "}
+          <Link href="/register" className="text-primary-600 font-medium hover:underline">
+            {t.nav.signUp}
+          </Link>
+        </p>
+      </Container>
+    </div>
   );
 }

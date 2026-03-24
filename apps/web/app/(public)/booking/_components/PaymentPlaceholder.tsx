@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
+  bookingId?: string;
   price: number;
   currency: string;
   onSkip: () => void;
 };
 
-export function PaymentPlaceholder({ price, currency, onSkip }: Props) {
+export function PaymentPlaceholder({ bookingId, price, currency, onSkip }: Props) {
   const { t } = useI18n();
+  const paymentHref = bookingId ? `/payment?bookingId=${bookingId}` : "/payment";
 
   return (
     <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50/50 p-6">
@@ -30,8 +33,13 @@ export function PaymentPlaceholder({ price, currency, onSkip }: Props) {
         <p className="text-sm text-gray-600 flex items-center gap-1">
           <span>🛡️</span> {t.trust.platformProtected}
         </p>
-        <Button variant="primary" size="lg" className="w-full" onClick={onSkip}>
-          {t.trust.payNow}
+        <Link href={paymentHref}>
+          <Button variant="primary" size="lg" className="w-full">
+            {t.bookingFlow.continueToPayment}
+          </Button>
+        </Link>
+        <Button variant="ghost" size="sm" className="w-full" onClick={onSkip}>
+          {t.common.back} to dashboard
         </Button>
       </div>
     </div>

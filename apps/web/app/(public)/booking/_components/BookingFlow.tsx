@@ -42,7 +42,7 @@ export function BookingFlow({
   const [urgent, setUrgent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [bookingSuccess, setBookingSuccess] = useState<{ price: number; currency: string } | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState<{ id: string; price: number; currency: string } | null>(null);
 
   useEffect(() => {
     if (!masterId) {
@@ -103,7 +103,7 @@ export function BookingFlow({
       const endHour = h + 1;
       const timeEnd = `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
       const timeStartFormatted = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-      await createBooking({
+      const result = await createBooking({
         masterProfileId: master.id,
         masterServiceId: selectedService.id,
         address: {
@@ -118,8 +118,8 @@ export function BookingFlow({
         problemDescription: description || undefined,
         estimatedPrice: price,
         currency: currency as "AZN",
-      });
-      setBookingSuccess({ price, currency });
+      }) as { id?: string };
+      setBookingSuccess({ id: result?.id ?? "", price, currency });
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.error);
     } finally {
@@ -138,6 +138,7 @@ export function BookingFlow({
             <p className="text-gray-600 mt-1">{master.displayName}</p>
           </div>
           <PaymentPlaceholder
+            bookingId={bookingSuccess.id}
             price={bookingSuccess.price}
             currency={bookingSuccess.currency}
             onSkip={() => router.push("/customer/dashboard")}

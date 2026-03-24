@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useI18n, getName } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import type { MasterSummary } from "@/lib/api/masters";
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { AuthGateModal } from "@/components/AuthGateModal";
+import { FavoriteStarButton } from "@/components/FavoriteStarButton";
 
 type MasterService = {
   id: string;
@@ -38,8 +42,26 @@ export function MasterProfileClient({
   reviews: Review[];
 }) {
   const { t, locale } = useI18n();
+  const { accessToken, isReady } = useAuth();
+  const [authGateAction, setAuthGateAction] = useState<"book" | "message" | null>(null);
   const services = master.masterServices ?? [];
   const areas = master.serviceAreas ?? [];
+
+  const isAuthenticated = isReady && Boolean(accessToken);
+
+  function handleBookClick(e: React.MouseEvent) {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      setAuthGateAction("book");
+    }
+  }
+
+  function handleMessageClick(e: React.MouseEvent) {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      setAuthGateAction("message");
+    }
+  }
 
   return (
     <Container className="py-8">
@@ -100,7 +122,7 @@ export function MasterProfileClient({
             </div>
           </Card>
 
-          {/* Bio */}
+          {/* Bio / About */}
           {master.bio && (
             <Card>
               <h2 className="font-semibold text-gray-900 mb-2">{t.masters.services}</h2>
@@ -162,15 +184,54 @@ export function MasterProfileClient({
               <p className="text-xs text-gray-500 mb-4 flex items-center gap-1">
                 🔒 {t.trust.securePayment}
               </p>
-              <Link href={`/booking?masterId=${master.id}`}>
-                <Button variant="primary" size="lg" className="w-full">
+              {isAuthenticated ? (
+                <Link href={`/booking?masterId=${master.id}`}>
+                  <Button variant="primary" size="lg" className="w-full">
+                    {t.masters.bookNow}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full"
+                  onClick={handleBookClick}
+                >
                   {t.masters.bookNow}
                 </Button>
-              </Link>
+              )}
+              <div className="flex justify-center mt-3">
+                <FavoriteStarButton masterId={master.id} />
+              </div>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                {t.messages.keepCommunicationInPlatform}
+              </p>
+              {isAuthenticated ? (
+                <Link href={`/messages?masterId=${master.id}`} className="block mt-2">
+                  <Button variant="outline" size="sm" className="w-full">
+                    {t.orderConfirmation.messagePro}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={handleMessageClick}
+                >
+                  {t.orderConfirmation.messagePro}
+                </Button>
+              )}
             </Card>
           </div>
         </div>
       </div>
+
+      <AuthGateModal
+        isOpen={authGateAction !== null}
+        onClose={() => setAuthGateAction(null)}
+        action={authGateAction ?? "book"}
+      />
     </Container>
   );
 }

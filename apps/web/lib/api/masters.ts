@@ -14,8 +14,18 @@ export interface MastersQuery {
   isAvailable?: boolean;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "averageRating" | "completedJobsCount";
+  sortBy?: "createdAt" | "averageRating" | "completedJobsCount" | "recommended" | "priceAsc" | "ratingDesc" | "nearest" | "fastestArrival";
   sortOrder?: "asc" | "desc";
+  /** Server-side filter: price range */
+  priceMin?: number;
+  priceMax?: number;
+  /** Server-side filter: minimum rating */
+  minRating?: number;
+  /** Server-side filter: verified masters only */
+  verifiedOnly?: boolean;
+  /** Placeholder; backend may ignore if no data */
+  urgentAvailable?: boolean;
+  language?: string;
 }
 
 export interface MasterServiceSummary {
@@ -58,10 +68,32 @@ export async function getMasters(
   if (query?.limit) params.set("limit", String(query.limit));
   if (query?.sortBy) params.set("sortBy", query.sortBy);
   if (query?.sortOrder) params.set("sortOrder", query.sortOrder);
+  if (query?.priceMin != null) params.set("priceMin", String(query.priceMin));
+  if (query?.priceMax != null) params.set("priceMax", String(query.priceMax));
+  if (query?.minRating != null) params.set("minRating", String(query.minRating));
+  if (query?.verifiedOnly) params.set("verifiedOnly", "true");
+  if (query?.urgentAvailable) params.set("urgentAvailable", "true");
+  if (query?.language) params.set("language", query.language);
   const qs = params.toString();
-  const res = await fetch(getUrl(qs ? `?${qs}` : ""));
-  if (!res.ok) throw new Error("Failed to fetch masters");
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(getUrl(qs ? `?${qs}` : ""), {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error("Failed to fetch masters");
+    const data = (await res.json()) as unknown;
+    if (!data || typeof data !== "object" || !Array.isArray((data as PaginatedMasters).items)) {
+      return {
+        items: [],
+        meta: { page: 1, limit: query?.limit ?? 0, total: 0, totalPages: 0 },
+      };
+    }
+    return data as PaginatedMasters;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function getMasterById(id: string): Promise<MasterSummary> {

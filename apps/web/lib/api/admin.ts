@@ -117,3 +117,19 @@ export async function updateUserStatus(
   }
   return res.json();
 }
+
+export async function getAdminDisputes(accessToken: string) {
+  const res = await fetch(getUrl("/disputes"), {
+    headers: authHeaders(accessToken),
+  });
+  if (!res.ok) throw new Error("Failed to fetch disputes");
+  return res.json();
+}
+
+export async function getAdminDisputeById(accessToken: string, id: string) {
+  const res = await fetch(getUrl(`/disputes/${id}`), {
+    headers: authHeaders(accessToken),
+  });
+  if (!res.ok) throw new Error("Dispute not found");
+  return res.json();
+}

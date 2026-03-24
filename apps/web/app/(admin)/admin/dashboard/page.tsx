@@ -20,6 +20,7 @@ export default function AdminDashboardPage() {
     totalMasters?: number;
     totalBookings?: number;
     pendingMasterVerifications?: number;
+    unreadOrOpenDisputes?: number;
   } | null>(null);
   const [users, setUsers] = useState<{ items?: { id: string; email?: string; phone: string; role: string; status: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +62,12 @@ export default function AdminDashboardPage() {
             label={t.admin.verifications}
             value={dashboard?.pendingMasterVerifications ?? 0}
             variant="warning"
+          />
+        </Link>
+        <Link href="/admin/disputes" className="block hover:opacity-90 transition-opacity">
+          <StatCard
+            label={t.admin.disputes}
+            value={dashboard?.unreadOrOpenDisputes ?? 0}
           />
         </Link>
       </div>
