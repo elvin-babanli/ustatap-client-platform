@@ -76,4 +76,18 @@ export class AdminController {
   ) {
     return this.admin.updateUserStatus(userId, id, dto);
   }
+
+  @Get("disputes")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findDisputes() {
+    return this.admin.findDisputes();
+  }
+
+  @Get("disputes/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findDisputeById(@Param("id") id: string) {
+    return this.admin.findDisputeById(id);
+  }
 }
