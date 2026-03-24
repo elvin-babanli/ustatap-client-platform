@@ -73,8 +73,11 @@
 | Model | Purpose |
 |-------|---------|
 | **Session** | Refresh token sessions: userId, refreshTokenHash (SHA-256), expiresAt, revokedAt, ipAddress, userAgent |
+| **PasswordResetToken** | Single-use reset: userId, codeHash, expiresAt, usedAt |
 | **Notification** | In-app notification: userId, type, title, message, isRead |
-| **Dispute** | Booking dispute: openedBy, assignedAdmin, status, resolutionNote |
+| **Dispute** | Booking dispute: openedBy, assignedAdmin, status, issueType, reason, attachmentUrls (JSON array) |
+| **MessageThread** | One per booking: bookingId; links to Message |
+| **Message** | Thread message: threadId, senderId, content |
 | **AuditLog** | System audit: actorUserId, entityType, entityId, action, metadata |
 
 ### Derived Fields (MasterProfile)
@@ -108,6 +111,9 @@ Booking 1:n BookingAttachment
 Booking 1:1 Review
 Booking 1:n Payment
 Booking 0..1 Dispute
+Booking 0..1 MessageThread 1:n Message
+User 1:n PasswordResetToken
+User 1:n Message (as sender)
 Review 1:n ReviewReply
 Payment 0..1 Commission
 MasterProfile 1:n Payout
@@ -189,7 +195,13 @@ No gateway integration; schema ready for provider/providerReference when integra
 ## Audit & Dispute Models
 
 - **AuditLog:** Immutable trail. `actorUserId` nullable (system actions). `entityType` + `entityId` identify target. `metadata` (JSON) for extra context.
-- **Dispute:** One per booking. `openedByUserId`, `assignedAdminUserId`. Status: OPEN → UNDER_REVIEW → RESOLVED → CLOSED. `resolutionNote` for admin resolution.
+- **Dispute:** One per booking. `openedByUserId`, `assignedAdminUserId`. Status: OPEN → UNDER_REVIEW → RESOLVED → CLOSED. `issueType` (OVERCHARGE, BAD_QUALITY, NO_SHOW, SAFETY_ISSUE, PAYMENT_ISSUE, OTHER). `attachmentUrls` JSON array for future file URLs.
+
+## Password Reset & Messaging
+
+- **PasswordResetToken:** Stores hashed reset code; single-use, expiry. Created by forgot-password; consumed by reset-password.
+- **MessageThread:** One per booking; only customer and master of that booking participate.
+- **Message:** `threadId`, `senderId`, `content`. No phone/email exposure in API responses.
 
 ## Multilingual Strategy
 

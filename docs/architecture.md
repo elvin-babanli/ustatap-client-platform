@@ -141,6 +141,12 @@ Route groups use parentheses `(name)` so they do not affect the URL path.
 - Suspended/inactive users get Forbidden (403), not Unauthorized (401)
 - New users: `PENDING_VERIFICATION` — can log in; verification gates applied in future for sensitive actions
 
+### Forgot / Reset Password (MVP)
+
+- Public endpoints; identifier (email/phone) for account lookup
+- Reset code hashed in DB; single-use, expiry
+- Generic responses to reduce enumeration; dev-safe (code logged, no real email/SMS)
+
 ## Booking Service Architecture
 
 - **Location:** `apps/api/src/modules/bookings/`
@@ -208,6 +214,12 @@ Route groups use parentheses `(name)` so they do not affect the URL path.
 - Logged actions: verification status change, user status change, verification document create
 - Metadata: previousStatus, nextStatus, targetType; sensitive values redacted
 - actorUserId nullable for system actions
+
+## Messaging Foundation
+
+- **Booking-based:** MessageThread per booking; only customer and master participate
+- **REST-only:** No WebSocket; polling-friendly endpoints
+- **Privacy:** Phone/email never returned in message API responses
 
 ## Notification Foundation Strategy
 

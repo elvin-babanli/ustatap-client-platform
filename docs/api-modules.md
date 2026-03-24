@@ -31,7 +31,7 @@ Planned NestJS modules:
 | Module | Status |
 |--------|--------|
 | **health** | `GET /api/v1/health`, `GET /api/v1/health/readiness` |
-| **auth** | register, login, refresh, logout, me |
+| **auth** | register (role-based CUSTOMER/MASTER), login, refresh, logout, me, forgot-password, verify-reset-code, reset-password |
 | **users** | Partial — auth support |
 | **categories** | list, by slug; admin create/update/status |
 | **services** | list (paginated), by slug; admin create/update/status |
@@ -44,6 +44,8 @@ Planned NestJS modules:
 | **admin** | master verifications, user listing, user status update |
 | **audit-logs** | AuditLogsService for mutation audit |
 | **payments** | payment initiation, list/detail (customer); payouts (master); admin payment/payout management |
+| **disputes** | create, list own, detail own; admin list, detail |
+| **messages** | threads (booking-based), thread by booking, thread by id, create thread, send message (CUSTOMER/MASTER) |
 
 ### Categories Module
 
@@ -59,9 +61,16 @@ Planned NestJS modules:
 
 - **Protected (CUSTOMER):** `GET /customer-profile/me`, `PATCH /customer-profile/me`
 
+### Auth Module (extended)
+
+- **Public:** `POST /auth/register` — Role-based: CUSTOMER (creates customer profile) or MASTER (creates master profile, verificationStatus=PENDING). ADMIN cannot register. Master accepts: bio, experienceYears, categoryId, startingPrice.
+- **Public:** `POST /auth/forgot-password` — Body: `{ identifier }` (email or phone). Generic response; in dev, reset code logged server-side. Creates PasswordResetToken (single-use, expiry).
+- **Public:** `POST /auth/verify-reset-code` — Body: `{ identifier, code }`. Validates code before showing reset form.
+- **Public:** `POST /auth/reset-password` — Body: `{ identifier, code, newPassword }`. Resets password, invalidates token. Consider revoking existing sessions.
+
 ### Master Profiles Module
 
-- **Public:** `GET /masters?city=&serviceSlug=&categorySlug=&isAvailable=&page=&limit=&sortBy=&sortOrder=`, `GET /masters/:id`
+- **Public:** `GET /masters?city=&serviceSlug=&categorySlug=&isAvailable=&page=&limit=&sortBy=&sortOrder=&priceMin=&priceMax=&minRating=&verifiedOnly=&urgentAvailable=&language=` — Search filters: priceMin/priceMax (real), minRating (real), verifiedOnly (real), urgentAvailable (placeholder/graceful ignore), language (real if data exists), sortBy: recommended|priceAsc|ratingDesc|nearest|fastestArrival (nearest/fastestArrival placeholder if no geo data).
 - **Protected (MASTER):** `GET /master-profile/me`, `PATCH /master-profile/me`, `PUT /master-profile/me/services`
 - **Protected (MASTER) — Verification:**
   - `GET /master-profile/me/verification` — Verification summary (status, documents, latestRejectionReason)
@@ -136,3 +145,23 @@ Planned NestJS modules:
   - `GET /payments/admin/payouts` — List payouts
   - `POST /payments/admin/payouts` — Create payout for master
   - `PATCH /payments/admin/payouts/:id/status` — Update payout status
+
+### Disputes Module
+
+- **Protected (CUSTOMER, MASTER):**
+  - `POST /disputes` — Create dispute (bookingId, issueType, reason, attachmentUrls?). User must own booking. Initial status: OPEN. Booking status → DISPUTED.
+  - `GET /disputes/me` — List own disputes
+  - `GET /disputes/me/:id` — Get own dispute detail
+- **Protected (ADMIN):**
+  - `GET /admin/disputes` — List all disputes (optional)
+  - `GET /admin/disputes/:id` — Get dispute detail (optional)
+
+### Messages Module
+
+- **Protected (CUSTOMER, MASTER):** Booking-based messaging; only participants of a booking can message.
+  - `GET /messages/threads` — List own threads (with lastMessage, otherPartyDisplayName)
+  - `GET /messages/threads/by-booking/:bookingId` — Get or create thread for booking (participant only)
+  - `GET /messages/threads/:id` — Get thread with messages
+  - `POST /messages/threads` — Body: `{ bookingId }` — Create or get thread
+  - `POST /messages/threads/:id/messages` — Body: `{ content }` — Send message
+- No WebSocket; REST foundation, polling-friendly.

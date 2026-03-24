@@ -2,11 +2,12 @@
 
 ## Registration Rules
 
+- **Role-based:** Register accepts CUSTOMER or MASTER only. ADMIN cannot be created via register.
+- **CUSTOMER:** Creates User + CustomerProfile (firstName, lastName).
+- **MASTER:** Creates User + MasterProfile (displayName from firstName+lastName, bio, experienceYears, categoryId, startingPrice optional). verificationStatus = PENDING.
 - **Email:** Optional; if provided, must be unique
 - **Phone:** Required, must be unique
 - **Password:** Min 8 chars, uppercase, lowercase, number
-- **Profile:** CustomerProfile created with firstName, lastName
-- **Default role:** CUSTOMER
 - **Default status:** PENDING_VERIFICATION — user can log in; verification gates for sensitive actions in future
 
 ## Verification Assumptions
@@ -239,6 +240,15 @@
 - Generic "Invalid credentials" on login failure (no user enumeration)
 - Structured logging for auth events (no passwords/tokens)
 
+## Forgot / Reset Password
+
+- Public endpoints: forgot-password, verify-reset-code, reset-password
+- Identifier: email or phone (account lookup)
+- Reset code: stored hashed, single-use, expiry (e.g. 15min)
+- Generic responses to reduce account enumeration
+- Dev: reset code logged server-side (no real email/SMS)
+- After reset: consider revoking existing sessions
+
 ## Admin Mutation Safety
 
 - Admin mutation endpoints throttled (30 req/min)
@@ -250,6 +260,23 @@
 - `Idempotency-Key` header or DTO `idempotencyKey` supported
 - Duplicate initiation with same key returns existing payment
 - Reduces double-charge risk on retries
+
+## Dispute Rules
+
+- Customer or Master can open dispute for own booking only
+- One dispute per booking
+- issueType: OVERCHARGE, BAD_QUALITY, NO_SHOW, SAFETY_ISSUE, PAYMENT_ISSUE, OTHER
+- Opening dispute sets booking status to DISPUTED
+- Initial dispute status: OPEN
+- attachmentUrls: optional array for future file references
+
+## Messaging Rules
+
+- Booking-based: only customer and master of a booking can message
+- One MessageThread per booking
+- No phone/email exposure in API responses
+- REST foundation; no WebSocket
+- Quick replies (onMyWay, sharePhoto, willBeLate) placeholder for future
 
 ## Multilingual Support
 

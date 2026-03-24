@@ -4,13 +4,17 @@
 
 ```bash
 pnpm install
-cp .env.development.example apps/api/.env
-# Edit DATABASE_URL if PostgreSQL is on different host
+# Optional: copy apps/api/.env from apps/api/.env.development or set your own `.env` / `.env.local` there
 pnpm prisma:migrate:dev   # or: pnpm --filter api prisma db push
 pnpm prisma:seed
-pnpm dev:api &
-pnpm dev:web
+pnpm dev:api    # or: npx pnpm dev:api
+pnpm dev:web    # or: npx pnpm dev:web
+# Or both: pnpm dev
 ```
+
+**Windows:** If you set `DATABASE_URL` under User or System environment variables, it overrides `apps/api/.env` for many tools. Prefer removing that variable for local dev, or ensure it matches Docker (e.g. port **5433**). The API entrypoint loads `apps/api/.env` with **override** so the app follows the project file even when a stale `DATABASE_URL` exists in the OS.
+
+**Port 3001 in use (`EADDRINUSE`):** Docker Compose also exposes the API on `3001`. For a **local** `pnpm dev:api`, run `docker compose stop api` (Postgres can keep running).
 
 - API: http://localhost:3001
 - Web: http://localhost:3000
@@ -23,7 +27,7 @@ docker compose up -d
 
 - API: http://localhost:3001
 - Web: http://localhost:3000
-- PostgreSQL: localhost:5432 (user: ustatap, pass: ustatap_secret)
+- PostgreSQL (from host): `localhost:5433` → container `5432` (user: `ustatap`, pass: `ustatap_secret`). Port **5433** avoids conflicts with a local Postgres on **5432**.
 
 Seed runs automatically on first API start. To override env, create `.env`:
 
